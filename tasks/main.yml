@@ -1,0 +1,54 @@
+---
+- name: Install git prereqs
+  package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ git_prereqs_list }}"
+
+- name: Load sha256 sums
+  set_fact:
+    git_sha256_lookup: "{{ lookup('url', item, split_lines=False) }}"
+  loop:
+    - https://mirrors.edge.kernel.org/pub/software/scm/git/sha256sums.asc
+
+- name: Filter the sha256 sum
+  set_fact:
+      git_sha256: "{{ git_sha256_lookup | regex_search(git_regex_search) | regex_replace('^(?P<sha>\\w+).*$', '\\g<sha>') }}"
+
+- name: Download git source files
+  become: no
+  get_url:
+    url: "https://mirrors.edge.kernel.org/pub/software/scm/git/git-{{ git_version }}.tar.gz"
+    dest: /tmp
+    checksum: "sha256:{{ git_sha256 }}"
+  environment: "{{ git_proxy_env }}"
+
+- name: Unarchive git sources
+  unarchive:
+    src: "/tmp/git-{{ git_version }}.tar.gz"
+    dest: "/usr/src"
+    remote_src: yes
+  args:
+    creates: "/usr/src/git-{{ git_version }}"
+
+- name: Git Make all
+  shell: "make prefix=/usr/local/git all"
+  args:
+    chdir: "/usr/src/git-{{ git_version }}"
+    creates: "/usr/src/git-{{ git_version }}/git"
+
+- name: Git Make install
+  shell: "make prefix=/usr/local/git-{{ git_version }} install"
+  args:
+    chdir: "/usr/src/git-{{ git_version }}"
+    creates: "/usr/local/git-{{ git_version }}/bin/git"
+
+- name: Export additional git path in bashrc
+  lineinfile:
+    create: yes
+    state: present
+    regexp: "^export"
+    line: "export PATH=/usr/local/git-{{ git_version }}/bin:$PATH"
+    path: "/etc/profile.d/git-path.sh"
+    mode: 0644
+    owner: root
