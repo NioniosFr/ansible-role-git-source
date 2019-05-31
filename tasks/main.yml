@@ -32,13 +32,13 @@
     creates: "/usr/src/git-{{ git_version }}"
 
 - name: Git Make all
-  shell: "make prefix=/usr/local/git all"
+  command: "make prefix=/usr/local/git all"
   args:
     chdir: "/usr/src/git-{{ git_version }}"
     creates: "/usr/src/git-{{ git_version }}/git"
 
 - name: Git Make install
-  shell: "make prefix=/usr/local/git-{{ git_version }} install"
+  command: "make prefix=/usr/local/git-{{ git_version }} install"
   args:
     chdir: "/usr/src/git-{{ git_version }}"
     creates: "/usr/local/git-{{ git_version }}/bin/git"
