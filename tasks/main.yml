@@ -13,7 +13,7 @@
 
 - name: Filter the sha256 sum
   set_fact:
-      git_sha256: "{{ git_sha256_lookup | regex_search(git_regex_search) | regex_replace('^(?P<sha>\\w+).*$', '\\g<sha>') }}"
+    git_sha256: "{{ git_sha256_lookup | regex_search(__git_regex_search) | regex_replace('^(?P<sha>\\w+).*$', '\\g<sha>') }}"
 
 - name: Download git source files
   become: no
@@ -43,7 +43,27 @@
     chdir: "/usr/src/git-{{ git_version }}"
     creates: "/usr/local/git-{{ git_version }}/bin/git"
 
+- name: Stat the git binary
+  stat:
+    path: "/usr/local/bin/git"
+  register: git_bin_stat
+
+- name: Create a symblolic link for the git binary
+  when: ( not git_bin_stat.stat.exists | bool ) or (git_bin_stat.stat.islnk | bool)
+  file:
+    src: "/usr/local/git-{{ git_version }}/bin/git"
+    dest: "/usr/local/bin/git"
+    mode: 0755
+    owner: root
+    group: root
+    state: link
+  register: git_bin_lnk
+
+- debug:
+    var: git_bin_lnk
+
 - name: Export additional git path in bashrc
+  when: git_bin_lnk.skipped is defined and git_bin_lnk.skipped | bool
   lineinfile:
     create: yes
     state: present

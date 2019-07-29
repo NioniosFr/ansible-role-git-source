@@ -1,14 +1,3 @@
 ---
-git_prereqs_list:
-  - make
-  - automake
-  - autoconf
-  - curl-devel
-  - expat-devel
-  - gettext-devel
-  - openssl-devel
-  - zlib-devel
-  - gcc
-  - perl-ExtUtils-MakeMaker
 
-git_regex_search: "([a-zA-Z0-9]*)\\s+git-{{ git_version | replace('.', '\\.') }}\\.tar\\.gz"
+__git_regex_search: "([a-zA-Z0-9]*)\\s+git-{{ git_version | replace('.', '\\.') }}\\.tar\\.gz"
